@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DDR · Detailed Diagnostic Report Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0f1f38;
+  --navy2: #1a2f50;
+  --blue: #2563eb;
+  --blue-light: #dbeafe;
+  --teal: #0891b2;
+  --teal-light: #cffafe;
+  --amber: #d97706;
+  --red: #dc2626;
+  --green: #16a34a;
+  --bg: #f8f9fc;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --text: #0f172a;
+  --muted: #64748b;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background pattern ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(37,99,235,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 110%, rgba(8,145,178,0.07) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── Header ── */
+header {
+  padding: 56px 0 40px;
+  text-align: center;
+}
+
+.logo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+.logo-dot { width: 6px; height: 6px; border-radius: 50%; background: #60a5fa; }
+
+header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--navy);
+  margin-bottom: 14px;
+}
+
+header h1 span { color: var(--blue); }
+
+header p {
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 400;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Upload Section ── */
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
+
+.upload-card {
+  background: var(--surface);
+  border: 1.5px dashed rgba(37,99,235,0.25);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  text-align: center;
+  overflow: hidden;
+}
+
+.upload-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(37,99,235,0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.upload-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.08);
+  transform: translateY(-1px);
+}
+
+.upload-card input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-card.has-file {
+  border-style: solid;
+  border-color: var(--green);
+  background: linear-gradient(135deg, rgba(22,163,74,0.04) 0%, var(--surface) 60%);
+}
+
+.upload-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-size: 22px;
+}
+
+.upload-card:nth-child(1) .upload-icon { background: rgba(37,99,235,0.1); }
+.upload-card:nth-child(2) .upload-icon { background: rgba(8,145,178,0.1); }
+.upload-card.has-file .upload-icon { background: rgba(22,163,74,0.12); }
+
+.upload-label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.upload-sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.upload-card.has-file .upload-sub { color: var(--green); font-weight: 500; }
+
+.tag {
+  display: inline-block;
+  background: rgba(37,99,235,0.08);
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 100px;
+  margin-top: 8px;
+}
+
+/* ── Run Button ── */
+.btn-run {
+  width: 100%;
+  padding: 16px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-run::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+}
+
+.btn-run:hover:not(:disabled) {
+  background: var(--navy2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-run:active:not(:disabled) { transform: translateY(0); }
+.btn-run:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-icon { font-size: 18px; }
+
+/* ── Error ── */
+.error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--red);
+  margin-bottom: 16px;
+  display: none;
+  line-height: 1.5;
+}
+.error-box.show { display: block; }
+
+/* ── Progress ── */
+.progress-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  display: none;
+  box-shadow: var(--shadow);
+}
+.progress-card.show { display: block; }
+
+.progress-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.step-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-weight: 400;
+  transition: color 0.3s;
+}
+.step.active { color: var(--navy); font-weight: 500; }
+.step.done { color: var(--green); }
+
+.step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.3s;
+}
+.step.active .step-dot { border-color: var(--blue); background: rgba(37,99,235,0.08); color: var(--blue); }
+.step.done .step-dot { border-color: var(--green); background: rgba(22,163,74,0.1); color: var(--green); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin {
+  width: 12px; height: 12px;
+  border: 2px solid transparent;
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Output Card ── */
+.output-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  display: none;
+}
+.output-card.show { display: block; }
+
+.output-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+}
+
+.output-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.output-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.success-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(22,163,74,0.1);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  padding: 0 24px;
+}
+
+.tab {
+  padding: 10px 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+  letter-spacing: 0.01em;
+}
+.tab:hover { color: var(--navy); }
+.tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+.tab-panel { display: none; padding: 28px 28px; max-height: 640px; overflow-y: auto; }
+.tab-panel.active { display: block; }
+.tab-panel::-webkit-scrollbar { width: 4px; }
+.tab-panel::-webkit-scrollbar-track { background: transparent; }
+.tab-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+
+/* ── Report Rendering ── */
+.meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 14px 20px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+
+.meta-item { font-size: 12px; color: var(--muted); }
+.meta-item strong { color: var(--navy); font-weight: 600; display: block; font-size: 11px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.ddr-section { margin-bottom: 28px; }
+.ddr-section:last-child { margin-bottom: 0; }
+
+.ddr-h1 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--navy);
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.ddr-h2 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue);
+  margin: 14px 0 7px;
+  letter-spacing: 0.01em;
+}
+
+.ddr-p { font-size: 13.5px; color: var(--text); line-height: 1.7; margin-bottom: 8px; }
+
+.ddr-ul { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.ddr-ul li {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+  padding-left: 16px;
+  position: relative;
+}
+.ddr-ul li::before { content: '›'; position: absolute; left: 3px; color: var(--blue); font-weight: 700; }
+
+.thermal-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--teal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 10px 0 5px;
+}
+
+.img-block {
+  border: 1px dashed rgba(0,0,0,0.15);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin: 8px 0;
+  background: var(--bg);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+}
+.badge.high { background: #fef2f2; color: var(--red); }
+.badge.medium { background: #fffbeb; color: var(--amber); }
+.badge.low { background: #f0fdf4; color: var(--green); }
+
+.sev-row {
+  display: grid;
+  grid-template-columns: 1fr auto 2fr;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sev-row:last-child { border-bottom: none; }
+.sev-issue { font-size: 13px; font-weight: 600; color: var(--navy); }
+.sev-area { font-size: 11px; color: var(--muted); }
+.sev-reason { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+.priority-group { margin-bottom: 14px; }
+.priority-label {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+.priority-label.immediate { background: #fef2f2; color: var(--red); }
+.priority-label.short { background: #fffbeb; color: var(--amber); }
+.priority-label.maint { background: #f0fdf4; color: var(--green); }
+
+.action-row {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+}
+.action-row:last-child { border-bottom: none; }
+.action-num { font-family: var(--font-mono); font-size: 11px; color: var(--muted); padding-top: 2px; min-width: 22px; }
+
+.miss-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.miss-row:last-child { border-bottom: none; }
+.miss-key { font-weight: 600; color: var(--navy); }
+.miss-val { color: var(--muted); font-style: italic; }
+
+.raw-pre {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: #334155;
+  white-space: pre-wrap;
+  line-height: 1.75;
+  background: #f8f9fc;
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+/* ── Download Bar ── */
+.download-bar {
+  background: var(--navy);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: none;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-lg);
+}
+.download-bar.show { display: flex; }
+
+.dl-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex: 1;
+  min-width: 100px;
+}
+
+.btn-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+  letter-spacing: 0.01em;
+}
+
+.btn-dl:active { transform: scale(0.97); }
+
+.btn-dl.docx {
+  background: #2563eb;
+  color: #fff;
+}
+.btn-dl.docx:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+
+.btn-dl.pdf {
+  background: #dc2626;
+  color: #fff;
+}
+.btn-dl.pdf:hover { background: #b91c1c; box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+
+.btn-dl.json {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.btn-dl.json:hover { background: rgba(255,255,255,0.18); }
+
+.btn-dl:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.dl-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-badge"><div class="logo-dot"></div> AI Workflow</div>
+    <h1>Detailed Diagnostic<br><span>Report Generator</span></h1>
+    <p>Upload your Inspection Report and Thermal Report. The AI reads both, merges the findings, and generates a structured DDR — ready to download.</p>
+  </header>
+
+  <!-- Upload -->
+  <div class="upload-grid">
+    <div class="upload-card" id="card-inspection">
+      <input type="file" accept=".pdf" onchange="handleFile(this,'inspection')" />
+      <div class="upload-icon">📋</div>
+      <div class="upload-label">Inspection Report</div>
+      <div class="upload-sub" id="sub-inspection">Click or drag to upload PDF</div>
+      <div class="tag">REQUIRED</div>
+    </div>
+    <div class="upload-card" id="card-thermal">
+      <input type="file" accept=".pdf" onchange="handleFile(this,'thermal')" />
+      <div class="upload-icon">🌡️</div>
+      <div class="upload-label">Thermal Report</div>
+      <div class="upload-sub" id="sub-thermal">Click or drag to upload PDF</div>
+      <div class="tag">REQUIRED</div>
+    </div>
+  </div>
+
+  <div class="error-box" id="err"></div>
+
+  <button class="btn-run" id="run-btn" onclick="runPipeline()" disabled>
+    <span class="btn-icon">⚡</span>
+    <span id="run-label">Generate DDR Report</span>
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-card" id="progress">
+    <div class="progress-title">Processing Pipeline</div>
+    <ul class="step-list">
+      <li class="step" id="s0"><div class="step-dot" id="d0">1</div>Reading inspection report</li>
+      <li class="step" id="s1"><div class="step-dot" id="d1">2</div>Reading thermal report</li>
+      <li class="step" id="s2"><div class="step-dot" id="d2">3</div>Merging &amp; deduplicating findings</li>
+      <li class="step" id="s3"><div class="step-dot" id="d3">4</div>Assessing severity &amp; root causes</li>
+      <li class="step" id="s4"><div class="step-dot" id="d4">5</div>Composing structured DDR</li>
+    </ul>
+  </div>
+
+  <!-- Output -->
+  <div class="output-card" id="output">
+    <div class="output-header">
+      <div class="output-header-left">
+        <div class="output-title">Generated Report</div>
+        <div class="success-badge">✓ Complete</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('report')">Report View</div>
+      <div class="tab" onclick="switchTab('raw')">Raw JSON</div>
+    </div>
+    <div class="tab-panel active" id="panel-report"></div>
+    <div class="tab-panel" id="panel-raw"></div>
+  </div>
+
+  <!-- Download Bar -->
+  <div class="download-bar" id="dl-bar">
+    <div class="dl-label">Download Report</div>
+    <button class="btn-dl docx" onclick="downloadFile('docx')" id="btn-docx">
+      <span>📄</span> Word (.docx)
+      <div class="dl-spinner" id="spin-docx"></div>
+    </button>
+    <button class="btn-dl pdf" onclick="downloadFile('pdf')" id="btn-pdf">
+      <span>📕</span> PDF
+      <div class="dl-spinner" id="spin-pdf"></div>
+    </button>
+    <button class="btn-dl json" onclick="downloadJson()" id="btn-json">
+      <span>{ }</span> JSON
+    </button>
+  </div>
+
+</div>
+
+<script>
+let files = { inspection: null, thermal: null };
+let lastReport = null;
+
+function handleFile(input, type) {
+  const f = input.files[0];
+  if (!f) return;
+  files[type] = f;
+  document.getElementById('card-' + type).classList.add('has-file');
+  document.getElementById('sub-' + type).textContent = f.name;
+  checkReady();
+}
+
+function checkReady() {
+  document.getElementById('run-btn').disabled = !(files.inspection && files.thermal);
+}
+
+function setStep(idx, state) {
+  const li = document.getElementById('s' + idx);
+  const dot = document.getElementById('d' + idx);
+  li.className = 'step ' + state;
+  if (state === 'active') dot.innerHTML = '<div class="spin"></div>';
+  else if (state === 'done') dot.textContent = '✓';
+  else dot.textContent = idx + 1;
+}
+
+function switchTab(name) {
+  ['report', 'raw'].forEach(n => {
+    document.querySelector(`.tab:nth-child(${n === 'report' ? 1 : 2})`).classList.toggle('active', n === name);
+    document.getElementById('panel-' + n).classList.toggle('active', n === name);
+  });
+}
+
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runPipeline() {
+  const errEl = document.getElementById('err');
+  errEl.className = 'error-box';
+  document.getElementById('output').className = 'output-card';
+  document.getElementById('dl-bar').className = 'download-bar';
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-label').textContent = 'Generating…';
+  document.getElementById('progress').className = 'progress-card show';
+
+  for (let i = 0; i < 5; i++) setStep(i, 'pending');
+
+  try {
+    setStep(0, 'active'); await sleep(300);
+    setStep(0, 'done'); setStep(1, 'active'); await sleep(300);
+    setStep(1, 'done'); setStep(2, 'active'); await sleep(200);
+    setStep(2, 'done'); setStep(3, 'active'); await sleep(200);
+    setStep(3, 'done'); setStep(4, 'active');
+
+    const formData = new FormData();
+    formData.append('inspection', files.inspection);
+    formData.append('thermal', files.thermal);
+
+    const res = await fetch('/generate', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Unknown error occurred.');
+    }
+
+    lastReport = data.report;
+    setStep(4, 'done');
+
+    renderReport(lastReport);
+    document.getElementById('panel-raw').innerHTML =
+      `<pre class="raw-pre">${esc(JSON.stringify(lastReport, null, 2))}</pre>`;
+    document.getElementById('output').className = 'output-card show';
+    document.getElementById('dl-bar').className = 'download-bar show';
+
+  } catch (e) {
+    errEl.textContent = '⚠ ' + e.message;
+    errEl.className = 'error-box show';
+    for (let i = 0; i < 5; i++) setStep(i, 'pending');
+  }
+
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-label').textContent = 'Regenerate DDR Report';
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function section(title, inner) {
+  return `<div class="ddr-section"><div class="ddr-h1">${title}</div>${inner}</div>`;
+}
+
+function renderReport(r) {
+  const el = document.getElementById('panel-report');
+  const pi = r.property_info || {};
+  let html = '';
+
+  // Meta bar
+  const metaFields = [
+    ['Address', pi.address], ['Date', pi.inspection_date],
+    ['Type', pi.property_type], ['Inspector', pi.inspector], ['Client', pi.client]
+  ].filter(([, v]) => v && v !== 'Not Available');
+
+  if (metaFields.length) {
+    html += '<div class="meta-bar">';
+    metaFields.forEach(([k, v]) => {
+      html += `<div class="meta-item"><strong>${k}</strong>${esc(v)}</div>`;
+    });
+    html += '</div>';
+  }
+
+  // 1. Summary
+  html += section('1. Property Issue Summary',
+    `<p class="ddr-p">${esc(r.property_issue_summary || 'Not Available')}</p>`);
+
+  // 2. Area-wise
+  let aHtml = '';
+  (r.area_wise_observations || []).forEach(a => {
+    aHtml += `<div class="ddr-h2">${esc(a.area)}</div>`;
+    if (a.observations?.length) {
+      aHtml += '<ul class="ddr-ul">';
+      a.observations.forEach(o => { aHtml += `<li>${esc(o)}</li>`; });
+      aHtml += '</ul>';
+    }
+    if (a.thermal_findings?.length) {
+      aHtml += '<div class="thermal-label">🌡 Thermal Findings</div><ul class="ddr-ul">';
+      a.thermal_findings.forEach(t => { aHtml += `<li>${esc(t)}</li>`; });
+      aHtml += '</ul>';
+    }
+    (a.images || []).forEach(img => {
+      const na = !img || img.toLowerCase().includes('not available');
+      aHtml += `<div class="img-block">${na ? '⬜  Image Not Available' : '🖼  ' + esc(img)}</div>`;
+    });
+  });
+  html += section('2. Area-wise Observations', aHtml || '<p class="ddr-p">Not Available</p>');
+
+  // 3. Root Causes
+  let cHtml = '<ul class="ddr-ul">';
+  (r.probable_root_causes || ['Not Available']).forEach(c => { cHtml += `<li>${esc(c)}</li>`; });
+  cHtml += '</ul>';
+  html += section('3. Probable Root Causes', cHtml);
+
+  // 4. Severity
+  let sHtml = '';
+  (r.severity_assessment || []).forEach(s => {
+    const lvl = (s.severity || '').toLowerCase();
+    const cls = lvl === 'high' ? 'high' : lvl === 'medium' ? 'medium' : 'low';
+    sHtml += `<div class="sev-row">
+      <div><div class="sev-issue">${esc(s.issue || '')}</div><div class="sev-area">${esc(s.area || '')}</div></div>
+      <div><span class="badge ${cls}">${esc(s.severity || 'Low')}</span></div>
+      <div class="sev-reason">${esc(s.reasoning || '')}</div>
+    </div>`;
+  });
+  html += section('4. Severity Assessment', sHtml || '<p class="ddr-p">Not Available</p>');
+
+  // 5. Recommended Actions
+  const groups = {};
+  let counter = 1;
+  (r.recommended_actions || []).forEach(a => {
+    const g = a.priority || 'General Maintenance';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ n: counter++, text: a.action });
+  });
+  let actHtml = '';
+  [['Immediate', 'immediate'], ['Short-term', 'short'], ['General Maintenance', 'maint']].forEach(([k, cls]) => {
+    const items = groups[k] || [];
+    if (!items.length) return;
+    actHtml += `<div class="priority-group">
+      <span class="priority-label ${cls}">${k}</span>`;
+    items.forEach(a => {
+      actHtml += `<div class="action-row"><div class="action-num">${a.n}.</div><div>${esc(a.text)}</div></div>`;
+    });
+    actHtml += '</div>';
+  });
+  html += section('5. Recommended Actions', actHtml || '<p class="ddr-p">Not Available</p>');
+
+  // 6. Additional Notes
+  let nHtml = '<ul class="ddr-ul">';
+  (r.additional_notes || ['Not Available']).forEach(n => { nHtml += `<li>${esc(n)}</li>`; });
+  nHtml += '</ul>';
+  if (r.conflicts?.length) {
+    nHtml += `<div class="thermal-label" style="color:var(--amber)">⚠ Conflicts Between Documents</div><ul class="ddr-ul">`;
+    r.conflicts.forEach(c => { nHtml += `<li>${esc(c)}</li>`; });
+    nHtml += '</ul>';
+  }
+  html += section('6. Additional Notes', nHtml);
+
+  // 7. Missing
+  let mHtml = '';
+  (r.missing_or_unclear_information || []).forEach(m => {
+    mHtml += `<div class="miss-row"><div class="miss-key">${esc(m.item || '')}</div><div class="miss-val">${esc(m.status || 'Not Available')}</div></div>`;
+  });
+  html += section('7. Missing or Unclear Information', mHtml || '<p class="ddr-p">None identified.</p>');
+
+  el.innerHTML = html;
+}
+
+async function downloadFile(type) {
+  if (!lastReport) return;
+  const btn = document.getElementById('btn-' + type);
+  const spin = document.getElementById('spin-' + type);
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+
+  try {
+    const res = await fetch('/download/' + type, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report: lastReport })
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DDR_Report.${type === 'docx' ? 'docx' : 'pdf'}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Download error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  spin.style.display = 'none';
+}
+
+function downloadJson() {
+  if (!lastReport) return;
+  const blob = new Blob([JSON.stringify(lastReport, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'DDR_Report.json';
+  a.click();
+}
+</script>
+</body>
+</html>
