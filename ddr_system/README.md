@@ -169,92 +169,6 @@ The generated DDR includes:
 
 ---
 
-## Troubleshooting
-
-### "Ollama Not Connected"
-- Make sure `ollama serve` is running in a terminal
-- Check that Ollama is installed: https://ollama.ai
-
-### "Model requires more memory"
-- Use a smaller model: `ollama pull tinyllama` (1.3GB)
-- The app will automatically fallback to demo reports
-
-### "Port 5000 already in use"
-- Change port in `app.py`: `app.run(debug=True, port=5001)`
-
----
-
-## Development
-
-To contribute:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## License
-
-MIT License - See LICENSE file for details
-
----
-
-## Support
-
-For issues or questions, please open an issue on GitHub.
-```
-
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Set your Anthropic API key
-
-Create a `.env` file (copy from `.env.example`):
-```
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-Then load it before running:
-
-**Windows (PowerShell):**
-```powershell
-$env:ANTHROPIC_API_KEY="sk-ant-xxxxxxx"
-python app.py
-```
-
-**Mac/Linux:**
-```bash
-export ANTHROPIC_API_KEY="sk-ant-xxxxxxx"
-python app.py
-```
-
-Or install `python-dotenv` and add this to the top of `app.py`:
-```python
-from dotenv import load_dotenv
-load_dotenv()
-```
-
-### 5. Open the app
-```
-http://localhost:5000
-```
-
----
-
-## Getting an Anthropic API Key
-
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign up / log in
-3. Navigate to **API Keys** → **Create Key**
-4. Copy the key (starts with `sk-ant-`)
-
-> **Note:** Anthropic does not have a free tier — new accounts receive $5 in free credits, which is enough for dozens of DDR reports. Each report generation costs approximately $0.05–0.15 depending on document size.
-
----
-
 ## DDR Output Structure
 
 The generated report contains:
@@ -266,8 +180,6 @@ The generated report contains:
 5. **Recommended Actions** — prioritized (Immediate / Short-term / Maintenance)
 6. **Additional Notes** — extra context and document conflicts
 7. **Missing or Unclear Information** — explicit "Not Available" entries
-
----
 
 ## Evaluation Criteria Met
 
